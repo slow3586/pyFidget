@@ -26,6 +26,12 @@
 
 import fidget
 import cairoEng
+import os
 
 if __name__ == "__main__":
-    cairoEng.run(fidget.Fidget(), "fidget-sprites.png", fidget.getFrameRect, (171, 151), (-28, -2))
+		spritefilename = 'fidget-sprites.png'
+		#if user is running windows then make sure python knows the exact folder where the sprite file is
+		#which by default is the script's folder, otherwise python can't see the file in windows
+		if os.name=="nt":
+				spritefilename = os.path.dirname(__file__) + "\\" + 'fidget-sprites.png'
+		cairoEng.run(fidget.Fidget(), spritefilename, fidget.getFrameRect, (171, 151), (-28, -2))

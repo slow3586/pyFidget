@@ -26,7 +26,7 @@
 
 import pygtk
 pygtk.require('2.0')
-import gtk, gobject, cairo
+import gtk, gobject, cairo, os
 from time import time, sleep
 import threading
 
@@ -52,10 +52,13 @@ def mkMatrix(p0, p1, p2, size):
                         x0 , y0 )
 
 def toShapeMap(surface):
-    width = surface.get_width()
-    height = surface.get_height()
-
-    bitmap = gtk.gdk.Pixmap(None, width, height, 1)
+    if not os.name=="nt":
+	#surface.getwidth() doesn't work on windows
+        width = surface.get_width()
+        height = surface.get_height()
+        bitmap = gtk.gdk.Pixmap(None, width, height, 1)
+    else:
+        bitmap = gtk.gdk.Pixmap(None, 200, 200, 1)
     bmpCr = bitmap.cairo_create()
 
     patt = cairo.SurfacePattern(surface)
@@ -83,13 +86,16 @@ class Screen(gtk.DrawingArea):
 
     # Handle the expose-event by drawing
     def do_expose_event(self, event):
-        if not hasattr(self, 'bg') :
-            if self.is_composited():
-                print("Composite! \o/")
-                self.bg = None
-            else:
-                self.bg = capt_screen(self)
-        
+        if not hasattr(self, 'bg'):
+			if self.is_composited():
+				print("Composite! \o/")
+				self.bg = None
+			else:
+				#capt_screen doesn't work properly on windows and only slows everything down
+				if os.name=="nt":
+					self.bg = None
+				else:
+					self.bg = capt_screen(self)
         # Create the cairo context
         cr = self.window.cairo_create()
 
@@ -206,9 +212,14 @@ def run(animation, texture, getFrameRect, size=(200, 200), offset=(0, 0)):
     window.set_skip_pager_hint(True)
     window.set_keep_above(True)
     window.stick()
-    window.set_default_size(*size)
-
-    colormap = window.get_screen().get_rgba_colormap()
+    window.set_default_size(*size)	
+	
+	#the other function doesn't work on windows
+	#which sadly means that transparency doesn't work on windows
+    if os.name=="nt":
+      colormap = gtk.gdk.colormap_get_system()
+    else:
+      colormap = window.get_screen().get_rgba_colormap()
     gtk.widget_set_default_colormap(colormap)
 
     window.present()
